@@ -2,13 +2,16 @@ package padtools;
 
 import padtools.converter.Converter;
 import padtools.editor.Editor;
-import padtools.util.Option;
-import padtools.util.OptionParser;
 import padtools.util.PathUtil;
-import padtools.util.UnknownOptionException;
 
 import java.io.File;
 import java.io.IOException;
+
+import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 
 /**
  * エントリポイントクラス
@@ -41,63 +44,50 @@ public class Main {
         Main.setting = setting;
 
         //オプション定義
-        final Option optHelp = new Option("h", "help", false);
-        final Option optOut = new Option("o", "output", true);
-        final Option optScale = new Option("s", "scale", true);
-
-        final OptionParser optParser = new OptionParser(new Option[]{
-                optHelp, optOut, optScale});
+        Options opts = new Options();
+        opts.addOption("i", "input",  true,  "Open spd file.");
+        opts.addOption("o", "output", true,  "Save to result_file.");
+        opts.addOption("s", "scale",  true,  "Image scale(available when result_file is set).");
+        opts.addOption("h", "help",   false, "Show this help.");
+        BasicParser parser = new BasicParser();
+        HelpFormatter help = new HelpFormatter();
 
         try{
-            optParser.parse(args, 1);
-        }
-        catch(UnknownOptionException ex){
-            System.err.println("Unknown option: " + ex.getOption());
-            System.exit(1);
-        }
-
-        if(optHelp.isSet()){
-            System.err.println("Arguments: [-o result_file] [-s scale] [-h] [spd_file]");
-            System.err.println("  -o result_file: Save to result_file.");
-            System.err.println("        -s scale: Image scale(available when result_file is set).");
-            System.err.println("              -h: Show this help.");
-            System.err.println("        spd_file: Open lpd file.");
-            System.exit(1);
-        }
-
-        File file_in;
-        if( optParser.getArguments().isEmpty() ) {
-            file_in = null;
-        }else {
-            file_in = new File(optParser.getArguments().getFirst());
-        }
-
-        File file_out;
-        if( optOut.getArguments().isEmpty()) {
-            file_out = null;
-        } else {
-            file_out = new File( optOut.getArguments().getLast());
-        }
-
-        Double scale;
-        if(optScale.getArguments().isEmpty()){
-            scale = null;
-        } else {
-            try {
-                scale = Double.parseDouble(optScale.getArguments().getLast());
-            } catch( NumberFormatException ex) {
-                System.err.println("不正なフォーマットのscale値が指定されました。");
+            CommandLine cl = parser.parse(opts, args);
+            if (cl.hasOption("-h")) {
+                help.printHelp("PadTools", opts);
                 System.exit(1);
-                return;
             }
-        }
-
-        if( file_out == null ) {
-            // file_out が指定されていない場合はエディタを起動
-            Editor.openEditor(file_in);
-        } else {
-            // file_out が指定された場合はエディタを起動せず、変換のみを行う
-            Converter.convert(file_in, file_out, scale);
+            File file_in = null;
+            if (cl.hasOption("-i")) {
+                file_in = new File(cl.getOptionValue("i"));
+                System.err.printf("file_in: %s\n", file_in.getPath());
+            }
+            File file_out = null;
+            if (cl.hasOption("-o")) {
+                file_out = new File(cl.getOptionValue("o"));
+                System.err.printf("file_out: %s\n", file_out.getPath());
+            }
+            Double scale = null;
+            if (cl.hasOption("-s")) {
+                try {
+                    scale = Double.parseDouble(cl.getOptionValue("s"));
+                    System.err.printf("scale: %f\n", scale);
+                } catch(NumberFormatException ex) {
+                    System.err.println("不正なフォーマットのscale値が指定されました。");
+                    System.exit(1);
+                }
+            }
+            if( file_out == null ) {
+                // file_out が指定されていない場合はエディタを起動
+                Editor.openEditor(file_in);
+            } else {
+                // file_out が指定された場合はエディタを起動せず、変換のみを行う
+                Converter.convert(file_in, file_out, scale);
+            }
+        } catch (ParseException e) {
+            help.printHelp("PadTools", opts);
+            System.exit(1);
         }
     }
 
