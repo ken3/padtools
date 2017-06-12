@@ -1,0 +1,55 @@
+<?xml version="1.0" ?>
+<project default="main">
+  <path id="local.classpath">
+    <pathelement location="bin"/>
+    <pathelement location="lib"/>
+    <fileset dir="lib">
+      <include name="*.jar"/>
+    </fileset>
+  </path>
+
+  <target name="main" depends="compile, jar"/>
+
+  <target name="compile" depends="copyfiles">
+      <javac srcdir="src"
+             destdir="bin"
+             classpathref="local.classpath"
+             includeantruntime="false"/>
+  </target>
+
+  <target name="copyfiles">
+      <copy todir="bin" failonerror="false" preservelastmodified="true">
+      <fileset dir="src">
+          <include name="**/*.png"/>
+      </fileset>
+      </copy>
+  </target>
+
+  <target name="jar">
+      <jar jarfile="lib/padtools.jar"
+           basedir="bin">
+           <manifest>
+               <attribute name="Main-Class" value="padtools.Main"/>
+               <attribute name="Class-Path" value="batik-awt-util.jar batik-dom.jar batik-ext.jar batik-extension.jar batik-svggen.jar batik-util.jar batik-xml.jar commons-cli.jar"/>
+           </manifest>
+      </jar>
+  </target>
+
+  <target name="runjar">
+      <java fork="true"
+            classpathref="local.classpath"
+            jar="lib/padtools.jar"/>
+  </target>
+
+  <target name="runclass">
+      <java fork="true"
+            classpathref="local.classpath"
+            classname="padtools.Main"/>
+  </target>
+
+  <target name="clean">
+      <delete dir="bin"/>
+      <delete file="lib/padtools.jar"/>
+  </target>
+</project>
+
